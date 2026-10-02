@@ -41,24 +41,46 @@ let models = [];
 let latestYear = new Date().getFullYear() + 1;
 let earliestYear = 2015;
 
-// Photo manifest is no longer read from a static file: the resolver runs in the
-// backend (photo_resolver.py via api/index.py or server.py) so uncached
-// vehicles can be looked up live. These track only whether a request is in flight.
+// Cached vehicle photos are resolved in the browser first so the 195 committed
+// images load directly from Vercel's static CDN. The API is only used when the
+// manifest has no acceptable cached entry and a live Honda lookup is needed.
+let photoManifest = {};
 let photoPending = false;
 let photoFailed = false;
 
 const otherTrimValue = "__other";
 
-// Resolves a photo through the backend, which serves the committed cache and
-// falls back to a live Info Center scrape for anything not cached.
+function cachedImage(year, model, trim) {
+  const exactKey = `${year}|${model}|${trim || ""}`;
+  const defaultKey = `${year}|${model}|__default__`;
+  const record = photoManifest[exactKey] || (trim ? photoManifest[defaultKey] : null);
+  if (!record || !record.file) return null;
+
+  return {
+    found: true,
+    image: `/images/${record.file}`,
+    credit: record.credit || "Honda",
+    source: record.source || "https://www.hondainfocenter.com/",
+    trimMatch: Boolean(record.trimMatch) && record.trim === trim,
+    fallback: Boolean(record.fallback),
+    width: record.width || null,
+    cached: true
+  };
+}
+
+// Resolve committed photos directly from the static manifest. Only uncached
+// vehicles reach the backend for a live Honda Info Center lookup.
 function lookupImage(year, model, trim) {
+  const cached = cachedImage(year, model, trim);
+  if (cached) return Promise.resolve(cached);
+
   const query = new URLSearchParams({ year: String(year), model, trim: trim || "" });
   return fetch(`/api/vehicle-image?${query.toString()}`)
     .then((response) => {
       if (!response.ok) throw new Error(`status ${response.status}`);
       return response.json();
     })
-    .catch((error) => {
+    .catch(() => {
       photoFailed = true;
       return { found: false, reason: "the photo service could not be reached" };
     });
@@ -209,9 +231,9 @@ async function syncVehicle() {
 
   // The photo is credited but too small to render cleanly. Show the silhouette
   // and keep the link to the official image.
-  if ((hit.width || 0) && hit.width < MIN_LEGIBLE_WIDTH) {
+  if (!hit.cached && (hit.width || 0) && hit.width < MIN_LEGIBLE_WIDTH) {
     showSilhouette(
-      "Honda publishes this photo only as a small swatch, so an illustration is shown here. Follow the credit to view the official image.",
+      "Honda publishes this live photo only as a small swatch, so an illustration is shown here. Follow the credit to view the official image.",
       { credit: trimLabel, source: hit.source }
     );
     return;
@@ -374,11 +396,16 @@ function syncUrl() {
 
 async function init() {
   try {
-    const response = await fetch("data/models.json", { cache: "no-cache" });
-    const spec = await response.json();
+    const [modelsResponse, manifestResponse] = await Promise.all([
+      fetch("data/models.json", { cache: "no-cache" }),
+      fetch("photo-manifest.json", { cache: "no-cache" })
+    ]);
+    const spec = await modelsResponse.json();
+    const manifest = await manifestResponse.json();
     models = spec.models;
     latestYear = spec.latestYear;
     earliestYear = spec.earliestYear;
+    photoManifest = manifest.entries || {};
   } catch (error) {
     $("vehicleName").textContent = "Vehicle data unavailable";
   }
