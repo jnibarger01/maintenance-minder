@@ -18,10 +18,25 @@ two behave identically.
 | --- | --- |
 | `GET /api/vehicle-image?year=&model=&trim=` | Resolves an official Honda photo. |
 | `GET /api/health` | Liveness check. |
-| `GET /images/<file>.png` | Serves a cached photo. |
+| `GET /images/<file>.png` | Served by Vercel's CDN as a static asset, not by the function. |
 
 The frontend is served as static files: `index.html`, `styles.css`, `app.js`,
 `data/models.json`, `favicon.svg`.
+
+### Why the cache is a Python module
+
+`photo_manifest.py` is generated from `photo-manifest.json` and imported, not
+read with `open()`. Vercel builds a function bundle by tracing imports, so a JSON
+file opened at runtime is never included — the entire photo cache would silently
+vanish in production and every request would fall back to a live scrape. For the
+same reason the 195 photos under `images/` are static assets served from the CDN
+rather than bundled into the function, which keeps it around 330KB.
+
+Regenerate the module after editing the manifest:
+
+```bash
+python3 scripts/build_photo_manifest.py
+```
 
 ### Where photos come from
 
@@ -93,7 +108,9 @@ styles.css              styles
 app.js                  code parsing, vehicle state, photo rendering
 data/models.json        vehicle catalogue
 images/                 195 cached Honda photos (committed)
-photo-manifest.json     key -> cached file + verified source URL
+photo-manifest.json     key -> cached file + verified source URL (source of truth)
+photo_manifest.py       generated importable copy, so Vercel bundles the cache
+scripts/build_photo_manifest.py  regenerates photo_manifest.py from the JSON
 photo_resolver.py       cache-first resolution with live-scrape fallback
 server.py               local development server
 api/index.py            FastAPI app for Vercel

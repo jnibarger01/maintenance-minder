@@ -26,6 +26,11 @@ from pathlib import Path
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
+try:
+    from photo_manifest import ENTRIES
+except ImportError:  # pragma: no cover - only if the generated module is missing
+    ENTRIES = {}
+
 ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = ROOT / "photo-manifest.json"
 HIC = "https://www.hondainfocenter.com"
@@ -172,12 +177,22 @@ class ImageParser(HTMLParser):
 
 
 def load_manifest():
-    """Committed photo cache, reloaded when the file changes during dev."""
+    """Committed photo cache.
+
+    Sourced from photo_manifest.py rather than opening photo-manifest.json at
+    runtime. Vercel traces a function bundle from its imports, so a JSON file
+    opened at runtime would not be included and the entire cache would
+    silently disappear in production.
+
+    The JSON file remains the source of truth; photo_manifest.py is generated
+    from it (see README). Locally we reload from JSON when it changes so edits
+    are picked up without regenerating the module.
+    """
     try:
         stat = os.stat(MANIFEST_PATH)
         signature = (stat.st_mtime, stat.st_size)
     except OSError:
-        return {}
+        return dict(ENTRIES)
 
     cached = load_manifest._cached
     if cached and cached[0] == signature:
@@ -185,10 +200,10 @@ def load_manifest():
 
     try:
         payload = json.loads(MANIFEST_PATH.read_text())
+        entries = payload.get("entries", {})
     except (OSError, ValueError):
-        return {}
+        return dict(ENTRIES)
 
-    entries = payload.get("entries", {})
     load_manifest._cached = (signature, entries)
     return entries
 
