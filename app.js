@@ -41,28 +41,27 @@ let models = [];
 let latestYear = new Date().getFullYear() + 1;
 let earliestYear = 2015;
 
-// Photo manifest, prebuilt by scripts/build_manifest.py.
-let images = {};
-let imagesLoaded = false;
-let imagesFailed = false;
+// Photo manifest is no longer read from a static file: the resolver runs in the
+// backend (photo_resolver.py via api/index.py or server.py) so uncached
+// vehicles can be looked up live. These track only whether a request is in flight.
+let photoPending = false;
+let photoFailed = false;
 
 const otherTrimValue = "__other";
-const defaultTrimValue = "__default__";
 
-// Resolves a photo from the static manifest. Never reaches the network for
-// metadata, so the page works from cache and offline once loaded.
+// Resolves a photo through the backend, which serves the committed cache and
+// falls back to a live Info Center scrape for anything not cached.
 function lookupImage(year, model, trim) {
-  if (!imagesLoaded) return { found: false, reason: "still loading" };
-  const exact = images[`${year}|${model}|${trim}`];
-  if (exact && exact.found) return exact;
-  // Custom trim names fall back to the vehicle's generic photo.
-  const generic = images[`${year}|${model}|${defaultTrimValue}`];
-  if (generic && generic.found) {
-    // The generic entry was resolved for whichever trim matched, so it cannot
-    // be presented as this customer's trim.
-    return { ...generic, trimMatch: false };
-  }
-  return { found: false, reason: "no photo published for this year and model" };
+  const query = new URLSearchParams({ year: String(year), model, trim: trim || "" });
+  return fetch(`/api/vehicle-image?${query.toString()}`)
+    .then((response) => {
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      return response.json();
+    })
+    .catch((error) => {
+      photoFailed = true;
+      return { found: false, reason: "the photo service could not be reached" };
+    });
 }
 
 function currentTrim() {
@@ -134,7 +133,7 @@ function handleTrimChange() {
 // photo reads as a blurry artefact, so we fall back to the built-in silhouette.
 const MIN_LEGIBLE_WIDTH = 240;
 
-function syncVehicle() {
+async function syncVehicle() {
   const model = selectedModel();
   const year = $("yearSelect").value;
   const trim = currentTrim();
@@ -152,7 +151,6 @@ function syncVehicle() {
   }
 
   const request = ++photoRequest;
-  const hit = lookupImage(year, model.name, trim);
   const label = $("imageLabel");
   const note = $("imageUnavailable");
   const carImage = $("carImage");
@@ -161,18 +159,16 @@ function syncVehicle() {
   const miniFallback = $("miniFallback");
   const miniNote = $("miniUnavailable");
 
-  const reset = () => {
-    [carImage, miniImage, carFallback, miniFallback].forEach((node) => { node.hidden = true; });
-    label.textContent = "Finding official Honda photo…";
-    label.href = "https://www.hondainfocenter.com/";
-    note.hidden = false;
-    miniNote.hidden = false;
-  };
+  [carImage, miniImage, carFallback, miniFallback].forEach((node) => { node.hidden = true; });
+  label.textContent = "Finding official Honda photo\u2026";
+  label.href = "https://www.hondainfocenter.com/";
+  note.textContent = "Finding the matching Honda photo\u2026";
+  note.hidden = false;
+  miniNote.textContent = "Loading";
+  miniNote.hidden = false;
 
   const showSilhouette = (message, credit) => {
     if (request !== photoRequest) return;
-    carImage.hidden = true;
-    miniImage.hidden = true;
     carFallback.innerHTML = silhouette(model.type, model.name);
     carFallback.hidden = false;
     miniFallback.innerHTML = silhouette(model.type, model.name);
@@ -188,24 +184,31 @@ function syncVehicle() {
     miniNote.hidden = true;
   };
 
-  // Credits a photo that is the right year and model but not this exact trim.
-  const trimLabel = hit.trimMatch === false
-    ? `${hit.credit} · model shown, not your trim`
-    : hit.credit;
+  if (!vehicleChosen) return;
 
-  reset();
+  photoPending = true;
+  const hit = await lookupImage(year, model.name, trim);
+  photoPending = false;
+  // A newer selection started while this request was in flight.
+  if (request !== photoRequest) return;
+
+  // Credit a photo that is the right year and model but not this exact trim.
+  const trimLabel =
+    hit.trimMatch === false ? `${hit.credit} \u00b7 model shown, not your trim` : hit.credit;
 
   if (!hit.found) {
-    if (imagesFailed) {
-      showSilhouette("The photo library could not be loaded.");
-    } else if (imagesLoaded) {
-      showSilhouette(hit.reason ? `${hit.reason}.` : "No matching official photo was found.");
-    }
+    showSilhouette(
+      photoFailed
+        ? "The photo service could not be reached. Re-select your vehicle to retry."
+        : hit.reason
+          ? `${hit.reason}.`
+          : "No matching official photo was found."
+    );
     return;
   }
 
-  // The photo exists and is credited, but is too small to render cleanly.
-  // Show the silhouette while keeping the link to the official image.
+  // The photo is credited but too small to render cleanly. Show the silhouette
+  // and keep the link to the official image.
   if ((hit.width || 0) && hit.width < MIN_LEGIBLE_WIDTH) {
     showSilhouette(
       "Honda publishes this photo only as a small swatch, so an illustration is shown here. Follow the credit to view the official image.",
@@ -217,7 +220,8 @@ function syncVehicle() {
   note.textContent =
     hit.trimMatch === false
       ? "This is your model year. Honda hasn't published a photo of this exact trim yet."
-      : "Loading official Honda photo…";
+      : "Loading official Honda photo\u2026";
+
   const onReady = () => {
     if (request !== photoRequest) return;
     carImage.hidden = false;
@@ -225,16 +229,18 @@ function syncVehicle() {
     note.hidden = true;
     miniNote.hidden = true;
   };
+  // If the photo itself fails to load, fall back to the silhouette rather than
+  // leaving the preview blank. Some Honda CDN assets are blocked by the browser.
   const onError = () => {
     if (request !== photoRequest) return;
-    label.textContent = "Honda image could not load";
-    note.textContent = "The official image was found but could not be loaded. Try re-selecting the vehicle.";
-    miniNote.textContent = "Image unavailable";
+    showSilhouette(
+      "Honda's image could not be loaded here. An illustration is shown instead.",
+      { credit: trimLabel, source: hit.source }
+    );
   };
   carImage.onload = onReady;
-  miniImage.onload = onReady;
-  carImage.onerror = onError;
   miniImage.onerror = onError;
+  miniImage.onload = onReady;
   carImage.alt = `${title}${trim ? " " + trim : ""} reference thumbnail`;
   miniImage.alt = carImage.alt;
   label.textContent = trimLabel;
@@ -366,20 +372,6 @@ function syncUrl() {
   history.replaceState(null, "", `?${params.toString()}`);
 }
 
-async function loadManifest() {
-  try {
-    const response = await fetch("images.json", { cache: "no-cache" });
-    if (!response.ok) throw new Error(`status ${response.status}`);
-    const payload = await response.json();
-    images = payload.entries || {};
-    imagesLoaded = true;
-  } catch (error) {
-    imagesFailed = true;
-    imagesLoaded = true;
-  }
-  syncVehicle();
-}
-
 async function init() {
   try {
     const response = await fetch("data/models.json", { cache: "no-cache" });
@@ -418,7 +410,7 @@ async function init() {
     $("vehicleToggle").setAttribute("aria-expanded", "true");
     $("vehicleToggle").firstChild.textContent = "Hide vehicle ";
   }
-  await loadManifest();
+  await syncVehicle();
 }
 
 async function copySummary() {

@@ -1,0 +1,2 @@
+*.png binary
+images/*.png -diff -merge
