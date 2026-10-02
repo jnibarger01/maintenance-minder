@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 
 # Vercel's Python runtime imports this file as a module, so the repo root is not
 # guaranteed to be on the path.
@@ -50,20 +50,8 @@ def vehicle_image(year: int = 0, model: str = "", trim: str = ""):
     return JSONResponse(payload, headers=headers)
 
 
-@app.get("/images/{filename}")
-def cached_image(filename: str):
-    """Serve a photo committed under images/.
-
-    Static hosting usually covers this path, but the Vercel function owns it
-    when the static layer is bypassed.
-    """
-    if "/" in filename or "\\" in filename or ".." in filename or not filename.endswith(".png"):
-        return Response(status_code=404)
-    path = ROOT / "images" / filename
-    if not path.is_file():
-        return Response(status_code=404)
-    return Response(
-        path.read_bytes(),
-        media_type="image/png",
-        headers={"Cache-Control": "public, max-age=31536000, immutable"},
-    )
+# /images/<file>.png is intentionally NOT served here. The 195 cached photos
+# live at the repository root, where Vercel serves them from its CDN as static
+# assets. Bundling them into the function would push it past the function size
+# limit, and the resolver reads them from disk at runtime rather than importing
+# them, so they would not be traced into the bundle anyway.
