@@ -35,3 +35,22 @@ body.vehicle-open .workspace{grid-template-columns:minmax(340px,420px) minmax(56
 body:not(.has-vehicle) .selected-vehicle{background:#fbfcfc;border-style:dashed}
 body:not(.has-vehicle) .vehicle-check{display:none}
 body:not(.has-vehicle) .mini-car{opacity:.55}
+
+/* WCAG AA contrast corrections for text on light surfaces. */
+.brand small,.eyebrow,.intro-copy,.step-mark,.section-heading p,.helper,
+.image-label,.image-unavailable,.mini-unavailable,.vehicle-caption span,
+.code-label,.quick-codes>span,.advisor-note p,.selected-vehicle small,
+.due-label,.code-summary p,.service-item p,.plain-language p,
+.customer-footer p,.card-bottom,.page-footer,.page-footer span:first-child{
+  color:#53616b;
+}
+.customer-head .eyebrow{color:var(--red)}
+.plain-language p{color:#465f58}
+.advisor-note p{color:#53616b}
+.customer-footer p{color:#59666e}
+.card-bottom,.page-footer{color:#5d6971}
+
+/* Keep placeholder copy readable; dim only decorative vehicle art. */
+body:not(.has-vehicle) .mini-car{opacity:1}
+body:not(.has-vehicle) .mini-car img,
+body:not(.has-vehicle) .mini-car .mini-fallback{opacity:.55}
