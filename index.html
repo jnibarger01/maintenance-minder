@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f6f8">
+<title>What does my Maintenance Minder code mean?</title>
+<meta name="description" content="Enter the Maintenance Minder code from your Honda's dashboard and see a plain-language explanation of the work your vehicle is due for.">
+<meta property="og:title" content="What does my Maintenance Minder code mean?">
+<meta property="og:description" content="Enter the Maintenance Minder code from your Honda's dashboard and see a plain-language explanation of the work your vehicle is due for.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Maintenance Minder Explainer home"><span class="brand-mark">H</span><span><b>HONDA</b><small>MAINTENANCE MINDER EXPLAINER</small></span></a>
+  <div class="top-actions">
+    <button class="quiet-button" id="vehicleToggle" type="button" aria-expanded="false" aria-controls="vehiclePanel">My vehicle <span>＋</span></button>
+  </div>
+</header>
+<main>
+<section class="intro">
+  <div>
+    <p class="eyebrow">SERVICE, MADE CLEAR</p>
+    <h1>What does your code<br><em>actually mean?</em></h1>
+    <p class="intro-copy">Type the code from your dashboard below. We'll show you exactly which work your Honda is due for, in plain language.</p>
+  </div>
+  <div class="step-mark"><span>01</span><span class="step-line"></span><span>CODE + SERVICE</span></div>
+</section>
+
+<section class="workspace">
+  <aside class="controls">
+    <div class="section-heading">
+      <span class="number">01</span>
+      <div><h2>Your service code</h2><p>Find it on the dashboard message, or in your owner's manual.</p></div>
+    </div>
+    <label class="code-label" for="codeInput">CODE FROM YOUR DASHBOARD</label>
+    <div class="code-row">
+      <input id="codeInput" maxlength="8" autocomplete="off" value="A1" spellcheck="false" aria-label="Maintenance Minder code" placeholder="A1">
+      <span id="codeStatus" class="valid-dot" aria-label="Valid code">✓</span>
+    </div>
+    <div class="quick-codes"><span>Try:</span><button type="button" data-code="A1">A1</button><button type="button" data-code="B1">B1</button><button type="button" data-code="A137">A137</button><button type="button" data-code="B12">B12</button></div>
+    <p class="helper">A Maintenance Minder code starts with <b>A</b> or <b>B</b>, followed by any numbers shown, such as <b>A1</b> or <b>B12</b>.</p>
+
+    <div id="vehiclePanel" class="vehicle-panel" hidden>
+      <div class="divider"></div>
+      <div class="section-heading">
+        <span class="number">02</span>
+        <div><h2>Your vehicle</h2><p>Optional. Adds your vehicle's photo to the explanation.</p></div>
+      </div>
+      <div class="field-grid">
+        <label>Model year<select id="yearSelect"></select></label>
+        <label>Honda model<select id="modelSelect"></select></label>
+        <label class="wide">Trim<select id="trimSelect"></select><input id="customTrim" type="text" placeholder="Enter the trim name" autocomplete="off" hidden></label>
+      </div>
+      <p class="helper">Trim choices are suggestions and vary by year. Choose “Other / enter trim” to type your own.</p>
+      <div class="vehicle-preview" id="vehiclePreview">
+        <div class="preview-top"><span class="eyebrow">VEHICLE</span><a class="image-label" id="imageLabel" href="https://www.hondainfocenter.com/" target="_blank" rel="noopener noreferrer">Finding official Honda photo…</a></div>
+        <div class="car-image-wrap">
+          <img id="carImage" alt="" hidden>
+          <div id="carFallback" class="car-fallback" aria-hidden="true" hidden></div>
+          <div id="imageUnavailable" class="image-unavailable">Finding the matching Honda photo…</div>
+        </div>
+        <div class="vehicle-caption"><div><strong id="vehicleName">Honda</strong><span id="vehicleTrimLabel">Choose a trim to refine the vehicle</span></div><span class="preview-arrow">↗</span></div>
+      </div>
+    </div>
+
+    <div class="advisor-note"><span class="info-icon">i</span><p><b>Good to know</b><br>Maintenance Minder timing is condition-based. Your exact schedule and equipment determine what applies.</p></div>
+  </aside>
+
+  <section class="customer-card" id="customerCard" aria-live="polite">
+    <div class="customer-head">
+      <div><p class="eyebrow">YOUR HONDA'S SERVICE REMINDER</p><h2>Here's what your code means</h2></div>
+      <div class="card-actions">
+        <button class="share-button" id="copyBtn" type="button" title="Copy this explanation">⧉ <span>Copy</span></button>
+        <button class="share-button" id="printBtn" type="button" title="Print or save as PDF">↗ <span>Print</span></button>
+      </div>
+    </div>
+    <div class="selected-vehicle">
+      <div class="mini-car"><img id="miniImage" alt="" hidden><div id="miniFallback" class="mini-fallback" hidden></div><span id="miniUnavailable" class="mini-unavailable">Loading</span></div>
+      <div><span id="customerVehicle">Your Honda</span><small id="customerTrim">Add your vehicle above to personalise this</small></div>
+      <span class="vehicle-check">✓</span>
+    </div>
+    <div class="code-summary"><div class="code-badge" id="codeBadge">A1</div><div><span class="due-label"><i></i> SERVICE REMINDER</span><h3 id="codeTitle">Oil service + tire rotation</h3><p id="codeSubtext">Your Honda's Maintenance Minder groups the items due at this time.</p></div></div>
+    <div class="service-list" id="serviceList"></div>
+    <div class="plain-language"><span class="spark">✳</span><div><b>Why is this due now?</b><p>Honda's Maintenance Minder estimates service timing using your vehicle's operating conditions. Mileage is one factor; it isn't a fixed interval for every driver.</p></div></div>
+    <div class="customer-footer"><span class="footer-icon">i</span><p><b>Your vehicle determines the exact work.</b> This guide explains common code meanings. Equipment and model year can change which items apply. Your dashboard message and owner's manual are the final reference.</p></div>
+    <div class="card-bottom"><span>HONDA MAINTENANCE MINDER</span><span id="footerVehicle">Maintenance Minder</span></div>
+  </section>
+</section>
+<footer class="page-footer"><span>Clear explanations. Confident decisions.</span><span>For advisor-assisted customer conversations</span></footer>
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

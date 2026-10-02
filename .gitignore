@@ -1,0 +1,7 @@
+# Build artefacts
+__pycache__/
+*.py[cod]
+
+# Local scratch
+.DS_Store
+*.log

@@ -1,0 +1,23 @@
+{
+  "models": [
+    {"name":"Accord","years":[2015,2027],"trims":["LX","Sport","EX","EX-L","Touring","Hybrid Sport","Hybrid EX-L","Hybrid Touring"],"type":"sedan"},
+    {"name":"Civic Sedan","years":[2015,2027],"trims":["LX","Sport","EX","EX-L","Touring","Sport Hybrid","Sport Touring Hybrid"],"type":"sedan"},
+    {"name":"Civic Hatchback","years":[2017,2027],"trims":["LX","Sport","Sport Touring","Sport Hybrid","Sport Touring Hybrid"],"type":"hatch"},
+    {"name":"Civic Si","years":[2015,2026],"exclude":[2016,2021],"trims":["Si"],"type":"sedan"},
+    {"name":"Civic Type R","years":[2017,2027],"exclude":[2022],"trims":["Type R"],"type":"hatch"},
+    {"name":"Prelude","years":[2026,2027],"trims":["Hybrid"],"type":"coupe"},
+    {"name":"HR-V","years":[2016,2027],"trims":["LX","Sport","EX","EX-L"],"type":"suv"},
+    {"name":"CR-V","years":[2015,2027],"trims":["LX","EX","EX-L","Sport","Sport-L","Touring","Hybrid Sport","Hybrid Sport-L","Hybrid Sport Touring"],"type":"suv"},
+    {"name":"Passport","years":[2019,2027],"trims":["EX-L","TrailSport","Black Edition"],"type":"suv"},
+    {"name":"Pilot","years":[2015,2027],"trims":["LX","EX-L","TrailSport","Touring","Elite","Black Edition"],"type":"suv"},
+    {"name":"Odyssey","years":[2015,2027],"trims":["EX","EX-L","Sport","Touring","Elite"],"type":"van"},
+    {"name":"Ridgeline","years":[2017,2027],"trims":["Sport","RTL","TrailSport","Black Edition"],"type":"truck"},
+    {"name":"Prologue","years":[2024,2027],"trims":["EX","Touring","Elite"],"type":"suv"},
+    {"name":"Fit","years":[2015,2020],"trims":["LX","Sport","EX","EX-L"],"type":"hatch"},
+    {"name":"Insight","years":[2019,2022],"trims":["LX","EX","Touring"],"type":"sedan"},
+    {"name":"Clarity","years":[2017,2021],"trims":["Plug-In Hybrid","Fuel Cell"],"type":"sedan"},
+    {"name":"CR-V e:FCEV","years":[2025,2025],"trims":["Touring"],"type":"suv"}
+  ],
+  "latestYear": 2027,
+  "earliestYear": 2015
+}
