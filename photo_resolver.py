@@ -204,9 +204,10 @@ def from_cache(year, model, trim):
         record = entries.get(f"{year}|{model}|__default__")
     if not record:
         return None
-    if not (ROOT / "images" / record["file"]).exists():
-        return None
 
+    # The committed manifest is verified in CI against images/. On Vercel the
+    # photos are deployed as static CDN assets, so they are not guaranteed to
+    # exist inside the Python function's filesystem at runtime.
     result = {
         "found": True,
         "image": f"/images/{record['file']}",
