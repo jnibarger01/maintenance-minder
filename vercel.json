@@ -18,6 +18,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "photo-data.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "favicon.svg",
       "use": "@vercel/static"
     },
@@ -27,6 +31,10 @@
     },
     {
       "src": "images/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "photo-manifest.json",
       "use": "@vercel/static"
     }
   ],

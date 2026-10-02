@@ -44,7 +44,7 @@ let earliestYear = 2015;
 // Cached vehicle photos are resolved in the browser first so the 195 committed
 // images load directly from Vercel's static CDN. The API is only used when the
 // manifest has no acceptable cached entry and a live Honda lookup is needed.
-let photoManifest = {};
+let photoManifest = window.HONDA_PHOTO_MANIFEST || {};
 let photoPending = false;
 let photoFailed = false;
 
@@ -396,16 +396,11 @@ function syncUrl() {
 
 async function init() {
   try {
-    const [modelsResponse, manifestResponse] = await Promise.all([
-      fetch("data/models.json", { cache: "no-cache" }),
-      fetch("photo-manifest.json", { cache: "no-cache" })
-    ]);
-    const spec = await modelsResponse.json();
-    const manifest = await manifestResponse.json();
+    const response = await fetch("data/models.json", { cache: "no-cache" });
+    const spec = await response.json();
     models = spec.models;
     latestYear = spec.latestYear;
     earliestYear = spec.earliestYear;
-    photoManifest = manifest.entries || {};
   } catch (error) {
     $("vehicleName").textContent = "Vehicle data unavailable";
   }
